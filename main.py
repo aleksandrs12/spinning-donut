@@ -48,6 +48,7 @@ while run:
             screen.set_at(p2, (255, 0, 0))
     '''
     x_rot += pi / 8
+    pixels_seen = {}
     for angle in np.arange(0, 2*pi, 2*pi / (360 * 4)):
         inner_pos = calculate_ring2((200, 200), INNER_RADIUS, angle)
         outer_pos = calculate_ring2((200, 200), OUTER_RADIUS, angle)
@@ -65,7 +66,14 @@ while run:
             #print(distance, OUTER_RADIUS-INNER_RADIUS // 2)
             color = distance_to_color(distance)
             #print(color)
-            screen.set_at((round(x), round(y)), color)
+            
+            # prevent parts of the circle that are further away from overwriting pixels from the closer ones
+            if not (round(x), round(y)) in pixels_seen:
+                pixels_seen[(round(x), round(y))] = distance
+                screen.set_at((round(x), round(y)), color)
+            elif pixels_seen[(round(x), round(y))] > distance:
+                pixels_seen[(round(x), round(y))] = distance
+                screen.set_at((round(x), round(y)), color)
         
             
         #screen.set_at(inner_pos, (255, 0, 0))
