@@ -2,11 +2,27 @@ from math import sqrt, cos, sin, pi
 import pygame
 import numpy as np
 #print('\033[H\033[J')
-INNER_RADIUS = 60
-OUTER_RADIUS = 120
+INNER_RADIUS = 30
+OUTER_RADIUS = 60
 
 x_rot = 0
 y_rot = 0
+
+
+sines_seen = {}
+def calculate_sin(angle):
+    if angle in sines_seen:
+        return sines_seen[angle]
+    sines_seen[angle] = sin(angle)
+    return sines_seen[angle]
+
+cosines_seen = {}
+def calculate_cos(angle):
+    if angle in cosines_seen:
+        return cosines_seen[angle]
+    cosines_seen[angle] = cos(angle)
+    return cosines_seen[angle]
+
 def calculate_ring(pos, r, x):
     if abs(x) > abs(r):
         return False, False
@@ -16,16 +32,39 @@ def calculate_ring(pos, r, x):
     return (round(pos[0] + x), y1), (round(pos[1] + x), y2)
 
 def calculate_ring2(pos, r, angle): # radians
-    y = round(sin(angle) * r + pos[1])
-    x = round(cos(angle) * r + pos[0])
+    y = round(calculate_sin(angle) * r + pos[1])
+    x = round(calculate_cos(angle) * r + pos[0])
     return [x, y]
 
+def value_to_rgb(value):
+    if not 0 <= value <= 1:
+        raise ValueError("Input value must be between 0 and 1")
+    
+    # Use linear interpolation between blue, purple, and red
+    if value <= 0.5:
+        # Transition from blue to purple
+        r = int(255 * (value * 2))  # Red increases
+        g = 0  # Green stays at 0
+        b = 255  # Blue stays at maximum
+    else:
+        # Transition from purple to red
+        r = 255  # Red stays at maximum
+        g = 0  # Green stays at 0
+        b = int(255 * (1 - (value - 0.5) * 2))  # Blue decreases
+    
+    return r, g, b
+
 def distance_to_color(d):
-    max_r = (OUTER_RADIUS-INNER_RADIUS) // 2
+    max_r = (OUTER_RADIUS-INNER_RADIUS) // 2 + ((OUTER_RADIUS+INNER_RADIUS) / 2) / 3
     the_procentage = ((d / max_r) + 1) / 2 # 0 to 1 ratio of something to make a color of
-    shifted_procentage = (the_procentage + 0.3) % 1 # shifts the procentage by 0.2
-    shifted_procentage2 = (the_procentage + 0.6) % 1 # shifts the procentage by 0.4
-    return (round(255 * the_procentage), round(255 * shifted_procentage), round(255 * shifted_procentage2))
+    
+    if the_procentage > 0.9:
+        the_procentage = 0.9
+    output = [round(255 * the_procentage), round(255 * the_procentage), round(255 * the_procentage)]
+    if output[2] < 210:
+        output[2] += 40
+    output = list(value_to_rgb(the_procentage))
+    return output
 
 screen = pygame.display.set_mode((400, 400))
 run = True
@@ -48,36 +87,46 @@ while run:
             screen.set_at(p2, (255, 0, 0))
     '''
     x_rot += pi / 8
+    y_rot += 0
     pixels_seen = {}
-    for angle in np.arange(0, 2*pi, 2*pi / (360 * 4)):
+    x_rot_sin = calculate_sin(x_rot)
+    for angle in np.arange(0, 2*pi, 2*pi / (360)):
         inner_pos = calculate_ring2((200, 200), INNER_RADIUS, angle)
         outer_pos = calculate_ring2((200, 200), OUTER_RADIUS, angle)
         
+        
         #x rotation logic
-        inner_pos[0] = round((inner_pos[0] - 200) * cos(x_rot)) + 200
-        outer_pos[0] = round((outer_pos[0] - 200) * cos(x_rot)) + 200
+        inner_pos[0] = round((inner_pos[0] - 200) * calculate_cos(x_rot)) + 200
+        outer_pos[0] = round((outer_pos[0] - 200) * calculate_cos(x_rot)) + 200
+        
+        inner_pos[1] = round((inner_pos[1] - 200) * calculate_cos(y_rot)) + 200
+        outer_pos[1] = round((outer_pos[1] - 200) * calculate_cos(y_rot)) + 200
         # the code is a bit ugly but basically i had to subtract 200 to isolate the actual x
         
-        for angle2 in np.arange(0, 2*pi, 2*pi / (360 * 1)):
+        for angle2 in np.arange(0, pi*2, 2*pi / (360)):
             ring_pos_adj = calculate_ring2((0, 0), (OUTER_RADIUS-INNER_RADIUS) // 2, angle2)
-            x = ring_pos_adj[0] * cos(angle) + (inner_pos[0] + outer_pos[0]) / 2
-            y = ring_pos_adj[0] * sin(angle) + (inner_pos[1] + outer_pos[1]) / 2
-            distance = ring_pos_adj[1]
+            x = (OUTER_RADIUS-INNER_RADIUS) / 2 * calculate_cos(angle2) + (inner_pos[0] + outer_pos[0]) / 2
+            y = (OUTER_RADIUS-INNER_RADIUS) / 2 * calculate_sin(angle2) + (inner_pos[1] + outer_pos[1]) / 2
+            distance = ring_pos_adj[1] * 2 + x_rot_sin * calculate_cos(angle) * ((OUTER_RADIUS+INNER_RADIUS) / 2) + ((OUTER_RADIUS+INNER_RADIUS) / 2)
             #print(distance, OUTER_RADIUS-INNER_RADIUS // 2)
             color = distance_to_color(distance)
             #print(color)
             
-            # prevent parts of the circle that are further away from overwriting pixels from the closer ones
+            # prevent parts of the circle that are further away from overwriting pixels that are closer
             if not (round(x), round(y)) in pixels_seen:
                 pixels_seen[(round(x), round(y))] = distance
                 screen.set_at((round(x), round(y)), color)
             elif pixels_seen[(round(x), round(y))] > distance:
                 pixels_seen[(round(x), round(y))] = distance
                 screen.set_at((round(x), round(y)), color)
+                
+            #screen.set_at((round(x), round(y)), color)
+            
+        #screen.set_at(inner_pos, (255, 100, 0))
+        #screen.set_at(outer_pos, (255, 0, 0))
         
             
-        #screen.set_at(inner_pos, (255, 0, 0))
-        #screen.set_at(outer_pos, (255, 0, 0))
+        
             
             
     pygame.display.update()
