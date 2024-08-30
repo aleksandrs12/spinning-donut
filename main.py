@@ -2,8 +2,8 @@ from math import sqrt, cos, sin, pi
 import pygame
 import numpy as np
 #print('\033[H\033[J')
-INNER_RADIUS = 30
-OUTER_RADIUS = 60
+INNER_RADIUS = 20
+OUTER_RADIUS = 40
 
 x_rot = 0
 y_rot = 0
@@ -55,18 +55,18 @@ def value_to_rgb(value):
     return r, g, b
 
 def distance_to_color(d):
-    max_r = (OUTER_RADIUS-INNER_RADIUS) // 2 + ((OUTER_RADIUS+INNER_RADIUS) / 2) / 3
+    max_r = (OUTER_RADIUS-INNER_RADIUS) // 2 * 3 + ((OUTER_RADIUS+INNER_RADIUS) / 2) / 3
     the_procentage = ((d / max_r) + 1) / 2 # 0 to 1 ratio of something to make a color of
     
     if the_procentage > 0.9:
         the_procentage = 0.9
-    output = [round(255 * the_procentage), round(255 * the_procentage), round(255 * the_procentage)]
+    output = [round(255 * calculate_sin(the_procentage)), round(255 * calculate_cos(the_procentage)), round(255 * calculate_sin(the_procentage))]
     if output[2] < 210:
         output[2] += 40
-    output = list(value_to_rgb(the_procentage))
+    #output = list(value_to_rgb(the_procentage))
     return output
 
-screen = pygame.display.set_mode((400, 400))
+screen = pygame.display.set_mode((200, 200))
 run = True
 while run:
     pygame.draw.rect(screen, (0, 0, 0), (0, 0, 400, 400))
@@ -86,28 +86,31 @@ while run:
             screen.set_at(p1, (255, 0, 0))
             screen.set_at(p2, (255, 0, 0))
     '''
-    x_rot += pi / 8
+    x_rot += pi / 16
     y_rot += 0
     pixels_seen = {}
     x_rot_sin = calculate_sin(x_rot)
-    for angle in np.arange(0, 2*pi, 2*pi / (360)):
-        inner_pos = calculate_ring2((200, 200), INNER_RADIUS, angle)
-        outer_pos = calculate_ring2((200, 200), OUTER_RADIUS, angle)
+    x_rot_cos = calculate_cos(x_rot)
+    for angle in np.arange(0, 2*pi, 2*pi / (360 / 1.5)):
+        
+        angle1_cos = calculate_cos(angle)
+        inner_pos = calculate_ring2((100, 100), INNER_RADIUS, angle)
+        outer_pos = calculate_ring2((100, 100), OUTER_RADIUS, angle)
         
         
         #x rotation logic
-        inner_pos[0] = round((inner_pos[0] - 200) * calculate_cos(x_rot)) + 200
-        outer_pos[0] = round((outer_pos[0] - 200) * calculate_cos(x_rot)) + 200
+        inner_pos[0] = round((inner_pos[0] - 100) * x_rot_cos) + 100
+        outer_pos[0] = round((outer_pos[0] - 100) * x_rot_cos) + 100
         
-        inner_pos[1] = round((inner_pos[1] - 200) * calculate_cos(y_rot)) + 200
-        outer_pos[1] = round((outer_pos[1] - 200) * calculate_cos(y_rot)) + 200
+        #inner_pos[1] = round((inner_pos[1] - 200) * calculate_cos(y_rot)) + 200
+        #outer_pos[1] = round((outer_pos[1] - 200) * calculate_cos(y_rot)) + 200
         # the code is a bit ugly but basically i had to subtract 200 to isolate the actual x
         
-        for angle2 in np.arange(0, pi*2, 2*pi / (360)):
+        for angle2 in np.arange(0, pi*2, 2*pi / (360 / 1.5)):
             ring_pos_adj = calculate_ring2((0, 0), (OUTER_RADIUS-INNER_RADIUS) // 2, angle2)
             x = (OUTER_RADIUS-INNER_RADIUS) / 2 * calculate_cos(angle2) + (inner_pos[0] + outer_pos[0]) / 2
             y = (OUTER_RADIUS-INNER_RADIUS) / 2 * calculate_sin(angle2) + (inner_pos[1] + outer_pos[1]) / 2
-            distance = ring_pos_adj[1] * 2 + x_rot_sin * calculate_cos(angle) * ((OUTER_RADIUS+INNER_RADIUS) / 2) + ((OUTER_RADIUS+INNER_RADIUS) / 2)
+            distance = ring_pos_adj[1] * 4 + x_rot_sin * angle1_cos * ((OUTER_RADIUS+INNER_RADIUS) / 2) + ((OUTER_RADIUS+INNER_RADIUS) / 2)
             #print(distance, OUTER_RADIUS-INNER_RADIUS // 2)
             color = distance_to_color(distance)
             #print(color)
