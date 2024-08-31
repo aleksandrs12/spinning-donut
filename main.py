@@ -108,7 +108,7 @@ while run:
             ring_pos_adj = calculate_ring2((0, 0), (OUTER_RADIUS-INNER_RADIUS) // 2, angle2)
             x = (OUTER_RADIUS-INNER_RADIUS) / 2 * calculate_cos(angle2) + (inner_pos[0] + outer_pos[0]) / 2
             y = (OUTER_RADIUS-INNER_RADIUS) / 2 * calculate_sin(angle2) + (inner_pos[1] + outer_pos[1]) / 2
-            distance = ring_pos_adj[1] * 4 + x_rot_sin * angle1_cos * ((OUTER_RADIUS+INNER_RADIUS) / 2) + ((OUTER_RADIUS+INNER_RADIUS) / 2)
+            distance = ring_pos_adj[1] * 4 * x_rot_cos + x_rot_sin * angle1_cos * ((OUTER_RADIUS+INNER_RADIUS) / 2) + ((OUTER_RADIUS+INNER_RADIUS) / 2)
             #print(distance, OUTER_RADIUS-INNER_RADIUS // 2)
             color = distance_to_color(distance)
             #print(color)
