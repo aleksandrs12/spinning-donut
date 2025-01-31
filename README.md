@@ -12,4 +12,4 @@ To launch
 python main.py
 ```
 
-The program requiers a python interpriter, the numpy liberary and the pygame liberary.
+The program requiers a python interpriter, the numpy liberary and the pygame library.
