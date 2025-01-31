@@ -1,6 +1,6 @@
 # Spinning Donut
 
-This is a python program that renders a spinning donut using only math and a 2D graphics liberary.
+This is a python program that renders a spinning donut using only math and a 2D graphics library.
 
 ## 📦 Usage
 
